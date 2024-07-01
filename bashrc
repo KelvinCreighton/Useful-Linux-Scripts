@@ -26,6 +26,7 @@ unset rc
 
 
 
+# General commands
 
 mkdircd() {
 	mkdir -p "$1" && cd "$1"
@@ -47,36 +48,6 @@ rd() {
 	reboot
 }
 
-
-# Additional qol usb commands
-mnt() {
-	if [ -z "$1" ]; then
-		echo "Usage: mnt <device>"
-		return 1
-	fi
-	sudo mount /dev/"$1" /mnt/usb
-	cd /mnt/usb
-}
-
-unmnt() {
-	cd
-	sudo umount /mnt/usb
-}
-
-cdusb() {
-	cd /mnt/usb/
-}
-
-
-topg() {
-	top -E g
-}
-
-rbt() {
-	systemctl restart bluetooth
-}
-
-
 e() {
 	exit
 }
@@ -97,7 +68,40 @@ clea() {
 	clear
 }
 
+topg() {
+	top -E g
+}
 
+
+# Quick systemctl commands
+
+rbt() {
+	systemctl restart bluetooth
+}
+
+
+# USB commands
+
+mnt() {
+	if [ -z "$1" ]; then
+		echo "Usage: mnt <device>"
+		return 1
+	fi
+	sudo mount /dev/"$1" /mnt/usb
+	cd /mnt/usb
+}
+
+unmnt() {
+	cd
+	sudo umount /mnt/usb
+}
+
+cdusb() {
+	cd /mnt/usb/
+}
+
+
+# Quick tar and gpg encryption commands
 tarcreate() {
 	tar -cvf "$1.tar" $1
 }
