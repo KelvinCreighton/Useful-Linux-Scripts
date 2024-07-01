@@ -102,7 +102,7 @@ cdusb() {
 
 
 # Quick tar and gpg encryption commands
-tarcreate() {
+tarmake() {
 	tar -cvf "$1.tar" $1
 }
 
@@ -120,13 +120,25 @@ tarunzip() {
 
 gpgencrypt() {
 	file="${1%/}"
-	tar -czvf "$file.tar.gz" $file
-	gpg --symmetric "$file.tar.gz"
-	rm "$file.tar.gz"
+	if [ -z "$2" ]; then
+        output="$file"
+    else
+        output="$2"
+    fi
+
+	tar -czvf "${output}.tar.gz" "$file" || { echo "Archiving failed"; return 1; }
+    gpg --symmetric "${output}.tar.gz" || { echo "Encryption failed"; return 1; }
+    rm "${output}.tar.gz" || { echo "Failed to remove temporary file"; return 1; }
 }
 
 gpgdecrypt() {
-	gpg --output $1.tar.gz --decrypt $2
-	tar -xzvf $1.tar.gz
-	rm $1.tar.gz
+	if [ -z "$2" ]; then
+		echo "Usage: gpgdecrypt <output> <file>"
+		return 1
+	fi
+
+	gpg --output "$1.tar.gz" --decrypt "$2" || { echo "Decryption failed"; return 1; }
+    mkdir -p "$1" || { echo "Failed to create directory $1"; return 1; }
+    tar -xzvf "$1.tar.gz" -C "$1" || { echo "Extraction failed"; rm -d "$1"; return 1; }
+    rm "$1.tar.gz" || { echo "Failed to remove temporary file"; return 1; }
 }
