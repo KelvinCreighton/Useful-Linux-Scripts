@@ -28,6 +28,12 @@ unset rc
 
 # General commands
 
+cdl() {
+	cd "$1" || return
+	shift
+	ls "$@"
+}
+
 mkdircd() {
 	mkdir -p "$1" && cd "$1"
 }
