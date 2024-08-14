@@ -153,7 +153,7 @@ tarunzip() {
 
 # Encrypt a file with a passphrase to a .tar.gz.gpg type
 gpgencrypt() {
-	file="${1%/}"          # Remove an trailing /
+	file="${1%/}"          # Remove any trailing /
 	if [ -z "$2" ]; then   # Check if a second argument was provided
         output="$file"     # If not then use the original file or directory as the base name for the output
     else
