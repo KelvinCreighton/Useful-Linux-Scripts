@@ -180,6 +180,22 @@ gpgdecrypt() {
 }
 
 
+# Create the trash files and directories
+createtrash() {
+    trashfilesdir="$HOME/.local/share/Trash/files/"
+    trashinfodir="$HOME/.local/share/Trash/info/"
+    trashdirectorysizesfile="$HOME/.local/share/Trash/directorysizes"
+    if [ ! -d $trashfilesdir ]; then
+        mkdir -p $trashfilesdir
+    fi
+    if [ ! -d $trashinfodir ]; then
+        mkdir -p $trashinfodir
+    fi
+    if [ ! -f $trashdirectorysizesfile ]; then
+        mkdir -p ~/.local/share/Trash/
+        touch $trashdirectorysizesfile
+    fi
+}
 
 # Trash a file instead of permanently deleting it
 trash() {
@@ -201,28 +217,21 @@ trash() {
 
     # Create the directories if they do not exist
     trashfilesdir="$HOME/.local/share/Trash/files/"
-    if [ ! -d $trashfilesdir ]; then
-        mkdir -p $trashfilesdir
-    fi
     trashinfodir="$HOME/.local/share/Trash/info/"
-    if [ ! -d $trashinfodir ]; then
-        mkdir -p $trashinfodir
-    fi
     trashdirectorysizesfile="$HOME/.local/share/Trash/directorysizes"
-    if [ ! -f $trashdirectorysizesfile ]; then
-        mkdir -p ~/.local/share/Trash/
-        touch $trashdirectorysizesfile
+    if [ ! -d "$trashfilesdir" ] || [ ! -d "$trashinfodir" ] || [ ! -f "$trashdirectorysizesfile" ]; then
+        createtrash
     fi
 
     # Create a trashinfo file for $1 including its original location and its deletion date to the trashinfo file
     infofiledirectory="$HOME/.local/share/Trash/info/$1.trashinfo"
     echo "[Trash Info]" > $trashinfodir/$1.trashinfo
-    echo -e "Path=$(pwd)/$1" >> $trashinfodir/$1.trashinfo
+    echo -e "Path=$currentfile" >> $trashinfodir/$1.trashinfo
     echo "DeletionDate=$(date '+%Y-%m-%dT%H:%M:%S')" >> $trashinfodir/$1.trashinfo
 
     # If $1 is a directory then add its size in bytes, the timestamp, and name of the file to the directorysizes file
     if [ "$filetype" -eq 1 ]; then
-        dirsize=$(du -sb "$currentfile" | awk '{print $1}')
+        dirsize=$(du -sb $currentfile | awk '{print $1}')
         timestamp=$(date +%s%3N)
         echo $dirsize $timestamp $1 >> $trashdirectorysizesfile
     fi
@@ -236,6 +245,24 @@ r() {
     trash "$@"
 }
 
-unr() {
+# List files in the trash
+trashls() {
+    # Create the directories if they do not exist
+    trashfilesdir="$HOME/.local/share/Trash/files/"
+    trashinfodir="$HOME/.local/share/Trash/info/"
+    trashdirectorysizesfile="$HOME/.local/share/Trash/directorysizes"
+    if [ ! -d "$trashfilesdir" ] || [ ! -d "$trashinfodir" ] || [ ! -f "$trashdirectorysizesfile" ]; then
+        createtrash
+    fi
+
+    # ls the trash files directory
+    ls $@ $trashfilesdir
+}
+
+trashundo() {
     echo "undo trash"
+}
+
+unr() {
+    trashundo $@
 }
