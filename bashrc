@@ -178,3 +178,64 @@ gpgdecrypt() {
     tar -xzvf "$2.tar.gz" -C "$2" || { echo "Extraction failed"; rm -d "$2"; return 1; }   # Extracts the contents of the decrypted file into the output directory, if this fails output an error, delete the output directory, and return 1
     rm "$2.tar.gz" || { echo "Failed to remove temporary file"; return 1; }                # Remove the decrypted file, if this fails output an error and return 1
 }
+
+
+
+# Trash a file instead of permanently deleting it
+trash() {
+    if [ "$#" -ne 1 ]; then
+        echo "Error: Exactly one argument is required."
+        return 1
+    fi
+    currentfile="$(pwd)/$1"
+    if [ -d "$currentfile" ]; then
+        filetype=1  # $1 is a directory
+    else
+        if [ -f "$currentfile" ]; then
+            filetype=0  # $1 is a file
+        else
+            echo "$1 does not exist"
+            return 1
+        fi
+    fi
+
+    # Create the directories if they do not exist
+    trashfilesdir="$HOME/.local/share/Trash/files/"
+    if [ ! -d $trashfilesdir ]; then
+        mkdir -p $trashfilesdir
+    fi
+    trashinfodir="$HOME/.local/share/Trash/info/"
+    if [ ! -d $trashinfodir ]; then
+        mkdir -p $trashinfodir
+    fi
+    trashdirectorysizesfile="$HOME/.local/share/Trash/directorysizes"
+    if [ ! -f $trashdirectorysizesfile ]; then
+        mkdir -p ~/.local/share/Trash/
+        touch $trashdirectorysizesfile
+    fi
+
+    # Create a trashinfo file for $1 including its original location and its deletion date to the trashinfo file
+    infofiledirectory="$HOME/.local/share/Trash/info/$1.trashinfo"
+    echo "[Trash Info]" > $trashinfodir/$1.trashinfo
+    echo -e "Path=$(pwd)/$1" >> $trashinfodir/$1.trashinfo
+    echo "DeletionDate=$(date '+%Y-%m-%dT%H:%M:%S')" >> $trashinfodir/$1.trashinfo
+
+    # If $1 is a directory then add its size in bytes, the timestamp, and name of the file to the directorysizes file
+    if [ "$filetype" -eq 1 ]; then
+        dirsize=$(du -sb "$currentfile" | awk '{print $1}')
+        timestamp=$(date +%s%3N)
+        echo $dirsize $timestamp $1 >> $trashdirectorysizesfile
+    fi
+
+    # Move $1 to the trash
+    mv $1 $trashfilesdir
+}
+
+# Trash shortcut command
+r() {
+    trash "$@"
+}
+
+unr() {
+    echo "undo trash"
+}
