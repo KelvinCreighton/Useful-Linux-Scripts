@@ -225,19 +225,19 @@ trash() {
 
     # Create a trashinfo file for $1 including its original location and its deletion date to the trashinfo file
     infofiledirectory="$HOME/.local/share/Trash/info/$1.trashinfo"
-    echo "[Trash Info]" > $trashinfodir/$1.trashinfo
-    echo -e "Path=$currentfile" >> $trashinfodir/$1.trashinfo
-    echo "DeletionDate=$(date '+%Y-%m-%dT%H:%M:%S')" >> $trashinfodir/$1.trashinfo
+    echo "[Trash Info]" > "$trashinfodir/$1.trashinfo"
+    echo -e "Path=$currentfile" >> "$trashinfodir/$1.trashinfo"
+    echo "DeletionDate=$(date '+%Y-%m-%dT%H:%M:%S')" >> "$trashinfodir/$1.trashinfo"
 
     # If $1 is a directory then add its size in bytes, the timestamp, and name of the file to the directorysizes file
     if [ "$filetype" -eq 1 ]; then
-        dirsize=$(du -sb $currentfile | awk '{print $1}')
+        dirsize=$(du -sb "$currentfile" | awk '{print $1}')
         timestamp=$(date +%s%3N)
-        echo $dirsize $timestamp $1 >> $trashdirectorysizesfile
+        echo "$dirsize" "$timestamp" "$1" >> "$trashdirectorysizesfile"
     fi
 
     # Move $1 to the trash
-    mv $1 $trashfilesdir
+    mv "$1" "$trashfilesdir"
 }
 
 # Trash shortcut command
@@ -255,8 +255,31 @@ trashls() {
         createtrash
     fi
 
-    # ls the trash files directory
-    ls $@ $trashfilesdir
+    # If there are no arguments then ls the trash files directory and return
+    if [ "$#" -eq 0 ]; then
+        ls "$trashfilesdir"
+        return 0
+    fi
+
+    # ls the last argument if it is a directory otherwise use trashfilesdir
+    targetdir="$trashfilesdir${@: -1}"
+    if [ -d "$targetdir" ]; then
+        ls "${@:1:$#-1}" "$targetdir"
+    else
+        ls "$@" "$trashfilesdir"
+    fi
+}
+
+trashpwd() {
+    # Create the directories if they do not exist
+    trashfilesdir="$HOME/.local/share/Trash/files/"
+    trashinfodir="$HOME/.local/share/Trash/info/"
+    trashdirectorysizesfile="$HOME/.local/share/Trash/directorysizes"
+    if [ ! -d "$trashfilesdir" ] || [ ! -d "$trashinfodir" ] || [ ! -f "$trashdirectorysizesfile" ]; then
+        createtrash
+    fi
+
+    echo "$HOME/.local/share/Trash/"
 }
 
 trashundo() {
