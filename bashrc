@@ -33,78 +33,41 @@ cdl() {
 	ls "$@"
 }
 # Shortcut to cdl if I change my mind from typing cd I can easily type home -> l -> enter
-lcd() {
-	cdl "$1"
-}
-
+alias lcd='cdl "$1"'
 # Make a directory and enter that new directory
-mkdircd() {
-	mkdir -p "$1" && cd "$1"
-}
-cdmkdir() {
-    mkdircd "$@"
-}
-
+alias mkdircd='mkdir -p "$1" && cd "$1"'
+alias cdmkdir='mkdircd "$@"'
 # Move a file into a directory then enter that directory
-mvcd() {
-	mv "$1" "$2" && cd "$2"
-}
-cdmv() {
-    mvcd "$@"
-}
-
-# Human redable ls command
-lh() {
-	ls -l -h "$@"
-}
-
-# Quick shutdown command
-sd() {
-	shutdown 0
-}
-
-# Quick reboot command
-rd() {
-	reboot
-}
-
-# Quick terminal exit
-e() {
-	exit
-}
-
-# Quick ls command
-l() {
-    ls
-}
-
-# Windows clear command
-cls() {
-	clear
-}
-# Typo clear command
-claer() {
-	clear
-}
-# Typo clear command
-clea() {
-	clear
-}
-
+alias mvcd='mv "$1" "$2" && cd "$2"'
+alias cdmv='mvcd "$@"'
+# Human redable ls alias
+alias lh='ls -l -h "$@"'
+# Quick shutdown alias
+alias sd='shutdown 0'
+# Quick reboot alias
+alias rd='reboot'
+# Quick terminal exit alias
+alias e='exit'
+# ls alias's
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+# Quick source alias
+alias s='source ~/.bashrc'
+# Windows clear alias
+alias cls='clear'
+# Typo clear alias's
+alias claer='clear'
+alias clea='clear'
 # top command set to gigabytes
-topg() {
-	top -E g
-}
+alias topg='top -E g'
+# Bluetooth restart alias
+alias rbt='systemctl restart bluetooth'
 
 
 
-# Bluetooth restart command
-rbt() {
-	systemctl restart bluetooth
-}
 
-
-
+# This section needs to be fixed with edge cases
 # Mount usb
 mnt() {
 	if [ -z "$1" ]; then
@@ -118,7 +81,7 @@ mnt() {
 # Unmount usb
 unmnt() {
 	cd
-	sudo umount /mnt/usb
+	sudo umount /dev/$1
 }
 
 # Enter the usb directory
@@ -131,25 +94,14 @@ lsusb() {
 }
 
 
-# Quick tar creator command
-tarmake() {
-	tar -cvf "$1.tar" $1
-}
-
-# Quick tar extractor command
-taropen() {
-	tar -xvf $1
-}
-
+# Quick tar creator alias
+alias tarmake='tar -cvf "$1.tar" $1'
+# Quick tar extractor alias
+alias taropen='tar -xvf $1'
 # Quick tar zipper command
-tarzip() {
-	tar -czvf "$1.tar.gz" $1
-}
-
+alias tarzip='tar -czvf "$1.tar.gz" $1'
 # Quick tar unzipper command
-tarunzip() {
-	tar -xzvf $1
-}
+alias tarunzip='tar -xzvf $1'
 
 # Encrypt a file with a passphrase to a .tar.gz.gpg type
 gpgencrypt() {
@@ -235,10 +187,8 @@ trash() {
     mv "$1" "$HOME/.local/share/Trash/files/"
 }
 
-# Trash shortcut command
-r() {
-    trash "$@"
-}
+# Trash shortcut alias
+alias r='trash "$@"'
 
 # List files in the trash
 trashls() {
@@ -268,9 +218,59 @@ trashpwd() {
 }
 
 trashundo() {
-    echo "undo trash"
-}
+    # Check if the Trash/info directory exists
+    if [ ! -d "$HOME/.local/share/Trash/info" ] || [ ! -f "$HOME/.local/share/Trash/directorysizes" ]; then
+        echo "The trash does not exist. Try trashing an item first"
+        return 1
+    fi
 
-unr() {
-    trashundo $@
-}
+    # Find the newest deleted file's info based on DeletionDate
+    latestInfoFile=$(grep -l "DeletionDate" "$HOME/.local/share/Trash/info/"*.trashinfo | xargs -I{} stat --format="%Y {}" {} | sort -n | tail -1 | cut -d' ' -f2-)
+    if [ -z "$latestInfoFile" ]; then
+        echo "No files found in the trash."
+        return 1
+    fi
+
+    # Extract the original path from the .trashinfo file
+    originalPath=$(grep "^Path=" "$latestInfoFile" | sed 's|^Path=||')
+    # Extract the directory path
+    originalDir=$(dirname "$originalPath")
+    # Check if the path the file is returning to exists
+    if [ ! -d "$originalDir" ]; then
+        # If it doesn't then create it or throw an error based on the users arguments
+        if [ "$1" = "-f" ]; then
+            mkdir -p "$originalDir"
+        else
+            echo "The original path does not exist"
+            echo "Add the arguments -f to force the undo and create the path"
+            return 1
+        fi
+    fi
+    # Extract the file name from the .trashinfo file
+    fileName=$(basename "$originalPath")
+    # Find the corresponding file in the files directory
+    fileInTrash="$HOME/.local/share/Trash/files/$fileName"
+    # Check if the file is a directory
+    if [ -d "$fileInTrash" ]; then
+        # Extract the deletion date from the .trashinfo file
+        #deletionDate=$(grep "^DeletionDate=" "$latestInfoFile" | sed 's|^DeletionDate=||' | sed 's|[-T:]||g')
+        deletionDate=$(grep "^DeletionDate=" "$latestInfoFile" | sed 's|^DeletionDate=||')
+        echo "$deletionDate"
+    fi
+
+    return 0
+    # Move the file or directory from trash to the original location
+    mv "$fileInTrash" "$originalDir/"
+
+    if [ $? -ne 0 ]; then
+        echo "Failed to restore $fileName."
+        return 1
+    else
+        echo "Successfully restored $fileName to $originalPath."
+    fi
+
+    # Remove the .trashinfo file
+    rm "$latestInfoFile"
+
+    return 0
+  }
