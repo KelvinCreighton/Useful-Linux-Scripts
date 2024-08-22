@@ -48,7 +48,7 @@ alias sd='shutdown 0'
 alias rd='reboot'
 # Quick terminal exit alias
 alias e='exit'
-# ls alias's
+# ls aliases
 alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
@@ -56,7 +56,7 @@ alias l='ls -CF'
 alias s='source ~/.bashrc'
 # Windows clear alias
 alias cls='clear'
-# Typo clear alias's
+# Typo clear aliases
 alias claer='clear'
 alias clea='clear'
 # top command set to gigabytes
@@ -67,32 +67,52 @@ alias rbt='systemctl restart bluetooth'
 
 
 
-# This section needs to be fixed with edge cases
+testcmd() {
+# Prompt for sudo if necessary
+   if ! sudo -v; then
+       sudo -v
+   fi
+
+   # Run the command with sudo
+   sudo "$@"
+}
+
 # Mount usb
 mnt() {
 	if [ -z "$1" ]; then
 		echo "Usage: mnt <device>"
 		return 1
 	fi
-	sudo mount /dev/"$1" /mnt/usb
-	cd /mnt/usb
+	# Ask for sudo
+	if ! sudo -v; then
+        sudo -v
+    fi
+    # Create the directory if it exists
+	if [ ! -d /mnt/$1 ]; then
+	   sudo mkdir /mnt/$1
+	fi
+	sudo mount /dev/$1 /mnt/$1
+	echo "Mounted to /mnt/$1"
 }
 
 # Unmount usb
 unmnt() {
+    # Ask for sudo
+    if ! sudo -v; then
+        sudo -v
+    fi
 	cd
 	sudo umount /dev/$1
 }
 
-# Enter the usb directory
-cdusb() {
-	cd /mnt/usb/
+# Poweroff hard drive
+poffdrive() {
+    if ! sudo -v; then
+        sudo -v
+    fi
+    unmnt $1
+    sudo udisksctl power-off -b /dev/$1
 }
-# List files in the usb directory
-lsusb() {
-    ls /mnt/usb/
-}
-
 
 # Quick tar creator alias
 alias tarmake='tar -cvf "$1.tar" $1'
