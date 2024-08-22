@@ -64,19 +64,6 @@ alias topg='top -E g'
 # Bluetooth restart alias
 alias rbt='systemctl restart bluetooth'
 
-
-
-
-testcmd() {
-# Prompt for sudo if necessary
-   if ! sudo -v; then
-       sudo -v
-   fi
-
-   # Run the command with sudo
-   sudo "$@"
-}
-
 # Mount usb
 mnt() {
 	if [ -z "$1" ]; then
@@ -97,6 +84,10 @@ mnt() {
 
 # Unmount usb
 unmnt() {
+    if [ -z "$1" ]; then
+		echo "Usage: unmnt <device>"
+		return 1
+	fi
     # Ask for sudo
     if ! sudo -v; then
         sudo -v
@@ -107,6 +98,10 @@ unmnt() {
 
 # Poweroff hard drive
 poffdrive() {
+    if [ -z "$1" ]; then
+		echo "Usage: poffdrive <drive>"
+		return 1
+	fi
     if ! sudo -v; then
         sudo -v
     fi
