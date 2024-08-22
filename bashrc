@@ -66,6 +66,7 @@ alias rbt='systemctl restart bluetooth'
 
 # Mount usb
 mnt() {
+    # Verify the user added the decive as an argument
 	if [ -z "$1" ]; then
 		echo "Usage: mnt <device>"
 		return 1
@@ -79,11 +80,12 @@ mnt() {
 	   sudo mkdir /mnt/$1
 	fi
 	sudo mount /dev/$1 /mnt/$1
-	echo "Mounted to /mnt/$1"
+	cd /mnt/$1/
 }
 
 # Unmount usb
 unmnt() {
+    # Verify the user added the decive as an argument
     if [ -z "$1" ]; then
 		echo "Usage: unmnt <device>"
 		return 1
@@ -92,20 +94,28 @@ unmnt() {
     if ! sudo -v; then
         sudo -v
     fi
-	cd
+	# Return to main directory if the user is in the drives directory
+	if pwd | grep -q "/mnt/$1"; then
+	    cd
+	fi
 	sudo umount /dev/$1
 }
 
 # Poweroff hard drive
 poffdrive() {
+    # Verify the user added the decive as an argument
     if [ -z "$1" ]; then
 		echo "Usage: poffdrive <drive>"
 		return 1
 	fi
+	# Ask for sudo
     if ! sudo -v; then
         sudo -v
     fi
-    unmnt $1
+    # Unmount the device if it is mounted
+	if mount | grep -q "/dev/$1"; then
+	    unmnt $1
+	fi
     sudo udisksctl power-off -b /dev/$1
 }
 
