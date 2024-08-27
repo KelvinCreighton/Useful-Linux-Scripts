@@ -132,16 +132,19 @@ alias tarunzip='tar -xzvf $1'
 
 # Encrypt a file with a passphrase to a .tar.gz.gpg type
 gpgencrypt() {
-	file="${1%/}"          # Remove any trailing /
-	if [ -z "$2" ]; then   # Check if a second argument was provided
-        output="$file"     # If not then use the original file or directory as the base name for the output
-    else
-        output="$2"        # If it is then use the second argument instead
-    fi
+	outputFile="${1%/}"    # Remove any trailing /
+	if [ "$#" -ge 2 ]; then    # Check if 2 or more arguments were provided
+	    inputFiles="${@:2}"    # If true then the remaining arguments are the files to be encrypted into one
+	else
+	    inputFiles="$outputFile"   # If false then use the output argument as the files argument
+	fi
 
-	tar -czvf "${output}.tar.gz" "$file" || { echo "Archiving failed"; return 1; }  # Create a temporary zipped tar of the file using the output name, if this fails output an error and return 1
-    gpg --symmetric "${output}.tar.gz" || { echo "Encryption failed"; return 1; }   # Encrypt the zipped tar file with a passphrase provided by the user, if this fails output an error and return 1
-    rm "${output}.tar.gz" || { echo "Failed to remove temporary file"; return 1; }  # Remove the zipped tar file, if this fails output and error and return 1
+	# Tar each file splitting any that exceed the 2G size. If it fails then remove all part files and return
+	tar -czvf - $inputFiles | split -b 2G - $outputFile.tar.gz.part || { rm $outputFile.tar.gz.part*; echo "Archiving failed"; return 1; }
+	cat $outputFile.tar.gz.part* > $outputFile.tar.gz  # Combine all part files into one
+	rm $outputFile.tar.gz.part*                        # Remove all part files even if combining fails
+    gpg --symmetric $outputFile.tar.gz                 # Encrypt the zipped tar file with a passphrase provided by the user
+    rm "$outputFile.tar.gz"                            # Remove the zipped tar file
 }
 
 # Decrypt a .tar.gz.gpg file type with a passphrase
@@ -152,10 +155,12 @@ gpgdecrypt() {
 		return 1
 	fi
 
-	gpg --output "$2.tar.gz" --decrypt "$1" || { echo "Decryption failed"; return 1; }     # Decrypt the file using the passphrase originally provided, if this fails output an error and return 1
-    mkdir -p "$2" || { echo "Failed to create directory $2"; rm "$2.tar.gz"; return 1; }   # Create the output directory, if this fails output an error, delete the decrypted file, and return 1
-    tar -xzvf "$2.tar.gz" -C "$2" || { echo "Extraction failed"; rm -d "$2"; return 1; }   # Extracts the contents of the decrypted file into the output directory, if this fails output an error, delete the output directory, and return 1
-    rm "$2.tar.gz" || { echo "Failed to remove temporary file"; return 1; }                # Remove the decrypted file, if this fails output an error and return 1
+	outputDir="${2%/}"
+
+	gpg --output "$outputDir.tar.gz" --decrypt "$1" || { echo "Decryption failed"; return 1; }     # Decrypt the file using the passphrase originally provided, if this fails output an error and return 1
+    mkdir -p "$outputDir" || { echo "Failed to create directory $outputDir"; rm "$outputDir.tar.gz"; return 1; }   # Create the output directory, if this fails output an error, delete the decrypted file, and return 1
+    tar -xzvf "$outputDir.tar.gz" -C "$outputDir" || { echo "Extraction failed"; rm -d "$outputDir"; return 1; }   # Extracts the contents of the decrypted file into the output directory, if this fails output an error, delete the output directory, and return 1
+    rm "$outputDir.tar.gz" || { echo "Failed to remove temporary file"; return 1; }                # Remove the decrypted file, if this fails output an error and return 1
 }
 
 
