@@ -35,10 +35,17 @@ cdl() {
 # Shortcut to cdl if I change my mind from typing cd I can easily type home -> l -> enter
 alias lcd='cdl "$1"'
 # Make a directory and enter that new directory
-alias mkdircd='mkdir -p "$1" && cd "$1"'
+mkdircd() {
+    mkdir -p "$1"
+    cd "$1"
+}
 alias cdmkdir='mkdircd "$@"'
 # Move a file into a directory then enter that directory
-alias mvcd='mv "$1" "$2" && cd "$2"'
+
+mvcd() {
+    mv "$1" "$2"
+    cd "$2"
+}
 alias cdmv='mvcd "$@"'
 # Human redable ls alias
 alias lh='ls -l -h "$@"'
@@ -63,6 +70,11 @@ alias clea='clear'
 alias topg='top -E g'
 # Bluetooth restart alias
 alias rbt='systemctl restart bluetooth'
+# Unzip and delete
+unziprm() {
+    unzip "$1"
+    rm "$1"
+}
 
 # Mount usb
 mnt() {
