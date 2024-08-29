@@ -132,16 +132,72 @@ alias tarunzip='tar -xzvf $1'
 
 # Encrypt a file with a passphrase to a .tar.gz.gpg type
 gpgencrypt() {
-	file="${1%/}"          # Remove any trailing /
-	if [ -z "$2" ]; then   # Check if a second argument was provided
-        output="$file"     # If not then use the original file or directory as the base name for the output
-    else
-        output="$2"        # If it is then use the second argument instead
+    # Check for a split size in GB. 0 means no splitting
+    split=0
+    if [ "$1" = "-s" ]; then
+        if [ -z "$2" ]; then
+            echo "Error: No value provided for split"
+            return 1
+        elif ! [[ "$2" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Error: Split size must be a number larger than 0"
+            return 1
+        fi
+        split="$2"
+        shift 2
     fi
 
-	tar -czvf "${output}.tar.gz" "$file" || { echo "Archiving failed"; return 1; }  # Create a temporary zipped tar of the file using the output name, if this fails output an error and return 1
-    gpg --symmetric "${output}.tar.gz" || { echo "Encryption failed"; return 1; }   # Encrypt the zipped tar file with a passphrase provided by the user, if this fails output an error and return 1
-    rm "${output}.tar.gz" || { echo "Failed to remove temporary file"; return 1; }  # Remove the zipped tar file, if this fails output and error and return 1
+    # Set input file to $2 if provided otherwise set it the same as the output file
+    outputFile="${1%/}"     # Remove trailing slash, if any
+    if [ ! -z "$2" ]; then
+        inputFile="$2"
+    else
+        inputFile="$outputFile"
+    fi
+
+    # If no split value was given and the file is larger than 4GB ask the user if they would like to split the file
+    if [ "$split" -eq 0 ]; then
+        if [ $(du -bs "$inputFile" | awk '{print $1}') -gt $((4 * 1024 * 1024 * 1024)) ]; then
+            echo "The file '$inputFile' is larger than 4GB"
+            # Prompt the user for input
+            read -p "Type a number to select the size to split the file in GB or C to continue: " result
+
+            if [[ "$result" =~ ^[1-9][0-9]*$ ]]; then
+                echo "Splitting file by $result GBs"
+                split="$result"
+            else
+                echo "Continuing without splitting"
+            fi
+        fi
+    fi
+
+    # Prompt for encryption passphrase
+    while true; do
+        read -s -p "Enter passphrase for encryption: " passphrase
+        echo
+        read -s -p "Re-enter passphrase for confirmation: " passphraseCompare
+        echo
+
+        if [ "$passphrase" = "$passphraseCompare" ]; then
+            break
+        else
+            echo
+            echo "Error: Passphrases do not match. Please try again."
+        fi
+    done
+
+    # tar and encrypt the file as parts or as a whole
+    if [ "$split" -gt 0 ]; then
+        tar -czvf - "$inputFile" | split -b "${split}G" - "$outputFile".tar.gz.part
+        # Encrypt each part
+        for part in "$outputFile".tar.gz.part*; do
+            gpg --batch --yes --passphrase "$passphrase" --symmetric "$part" || { echo "Encryption failed for $part"; return 1; }
+        done
+        rm "$outputFile".tar.gz.part*
+    else
+        tar -czvf "$outputFile".tar.gz "$inputFile"
+        gpg --symmetric "$outputFile".tar.gz || { echo "Encryption failed"; return 1; }
+        rm "$outputFile".tar.gz
+    fi
 }
 
 # Decrypt a .tar.gz.gpg file type with a passphrase
