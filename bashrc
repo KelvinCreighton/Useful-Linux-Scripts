@@ -144,32 +144,129 @@ alias tarunzip='tar -xzvf $1'
 
 # Encrypt a file with a passphrase to a .tar.gz.gpg type
 gpgencrypt() {
-	file="${1%/}"          # Remove any trailing /
-	if [ -z "$2" ]; then   # Check if a second argument was provided
-        output="$file"     # If not then use the original file or directory as the base name for the output
-    else
-        output="$2"        # If it is then use the second argument instead
+    # Check for a split size in GB. 0 means no splitting
+    split=0
+    if [ "$1" = "-s" ]; then
+        if [ -z "$2" ]; then
+            echo "Error: No value provided for split"
+            return 1
+        elif ! [[ "$2" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Error: Split size must be a number larger than 0"
+            return 1
+        fi
+        split="$2"
+        shift 2
     fi
 
-	tar -czvf "${output}.tar.gz" "$file" || { echo "Archiving failed"; return 1; }  # Create a temporary zipped tar of the file using the output name, if this fails output an error and return 1
-    gpg --symmetric "${output}.tar.gz" || { echo "Encryption failed"; return 1; }   # Encrypt the zipped tar file with a passphrase provided by the user, if this fails output an error and return 1
-    rm "${output}.tar.gz" || { echo "Failed to remove temporary file"; return 1; }  # Remove the zipped tar file, if this fails output and error and return 1
+    # Set input file to $2 if provided otherwise set it the same as the output file
+    outputFile="${1%/}"     # Remove trailing slash, if any
+    if [ ! -z "$2" ]; then
+        inputFile="$2"
+    else
+        inputFile="$outputFile"
+    fi
+
+    # If no split value was given and the file is larger than 4GB ask the user if they would like to split the file
+    if [ "$split" -eq 0 ]; then
+        if [ $(du -bs "$inputFile" | awk '{print $1}') -gt $((4 * 1024 * 1024 * 1024)) ]; then
+            echo "The file '$inputFile' is larger than 4GB"
+            # Prompt the user for input
+            read -p "Type a number to select the size to split the file in GB or C to continue: " result
+
+            if [[ "$result" =~ ^[1-9][0-9]*$ ]]; then
+                echo "Splitting file by $result GBs"
+                split="$result"
+            else
+                echo "Continuing without splitting"
+            fi
+        fi
+    fi
+
+    # Prompt for encryption passphrase
+    while true; do
+        read -s -p "Enter passphrase for encryption: " passphrase
+        echo
+        read -s -p "Re-enter passphrase for confirmation: " passphraseCompare
+        echo
+
+        if [ "$passphrase" = "$passphraseCompare" ]; then
+            break
+        else
+            echo
+            echo "Error: Passphrases do not match. Please try again."
+        fi
+    done
+
+    # tar and encrypt the file as parts or as a whole
+    if [ "$split" -gt 0 ]; then
+        tar -czvf - "$inputFile" | split -b "${split}G" - "$outputFile".tar.gz.part
+        # Encrypt each part
+        for part in "$outputFile".tar.gz.part*; do
+            gpg --batch --yes --passphrase "$passphrase" --symmetric "$part" || { echo "Encryption failed for $part"; return 1; }
+            rm "$part"
+        done
+    else
+        tar -czvf "$outputFile".tar.gz "$inputFile"
+        gpg --batch --yes --passphrase "$passphrase" --symmetric "$outputFile".tar.gz || { echo "Encryption failed"; return 1; }
+        rm "$outputFile".tar.gz
+    fi
 }
 
 # Decrypt a .tar.gz.gpg file type with a passphrase
 gpgdecrypt() {
-    # If two arguments were not provided then print a message of the usage for the command and return 1
-	if [ -z "$2" ]; then
-		echo "Usage: gpgdecrypt <file> <output directory>"
-		return 1
+    # Set the input file and output directory
+    if [ ! -z "$2" ]; then
+        outputDir="${1%/}"
+        inputFile="$2"
+    else
+        outputDir="."
+        inputFile="$1"
+    fi
+    # Create the output directory if it doesn't exist
+    dcreated=0
+    if [ ! -d "$outputDir" ]; then
+        mkdir "$outputDir"
+		dcreated=1
 	fi
 
-	outputDir="${2%/}"
+	read -s -p "Enter passphrase for decryption: " passphrase
+    echo
 
-	gpg --output "$outputDir.tar.gz" --decrypt "$1" || { echo "Decryption failed"; return 1; }     # Decrypt the file using the passphrase originally provided, if this fails output an error and return 1
-    mkdir -p "$outputDir" || { echo "Failed to create directory $outputDir"; rm "$outputDir.tar.gz"; return 1; }   # Create the output directory, if this fails output an error, delete the decrypted file, and return 1
-    tar -xzvf "$outputDir.tar.gz" -C "$outputDir" || { echo "Extraction failed"; rm -d "$outputDir"; return 1; }   # Extracts the contents of the decrypted file into the output directory, if this fails output an error, delete the output directory, and return 1
-    rm "$outputDir.tar.gz" || { echo "Failed to remove temporary file"; return 1; }                # Remove the decrypted file, if this fails output an error and return 1
+    # Check if the file was compressed as a whole
+    if [ ! "${inputFile%.tar.gz.gpg}" = "$inputFile" ]; then
+        decryptedFile="${outputDir}/${inputFile%.gpg}"
+        gpg --batch --yes --passphrase "$passphrase" --decrypt "$inputFile" > "$decryptedFile" || { echo "Decryption failed for $file"; continue; }
+        # Extract the decrypted file
+        tar -xzvf "$decryptedFile" -C "$outputDir" || { echo "Extraction failed for"; }
+        # Remove the decrypted file and keep the extracted file
+        rm "$decryptedFile"
+
+    # Check if the file was compressed as parts
+    elif [ ! "${inputFile%.tar.gz.part*.gpg}" = "$inputFile" ]; then
+        # Collect all part files and sort by name
+        baseName="${inputFile%.tar.gz.part*.gpg}"
+        files=($(ls "${baseName}.tar.gz.part"*.gpg | sort))
+
+        # Decrypt each part file
+        for file in "${files[@]}"; do
+            decryptedFile="${outputDir}/${file%.gpg}"
+            gpg --batch --yes --passphrase "$passphrase" --decrypt "$file" > "$decryptedFile" || { echo "Decryption failed for $file"; continue; }
+        done
+
+        # Extract the contents of the decrypted files into the output directory
+        cat "${outputDir}/${baseName}.tar.gz.part"* | tar -xzvf - -C "$outputDir" || { echo "Extraction failed"; continue; }
+        # Remove remaining decrypted parts
+        rm "${outputDir}/${baseName}.tar.gz.part"*
+
+	# If the file type did not match any of the types
+	else
+    	# Remove any directory created by this command
+    	if [ "$dcreated" -eq 1 ]; then
+    	   rm -d "$outputDir"
+    	fi
+    	echo "The file did not match the .tar.gz.gpg or the .tar.gz.part*.gpg types"
+    	return 1
+    fi
 }
 
 
