@@ -76,6 +76,27 @@ unziprm() {
     rm "$1"
 }
 
+# Quick compile asm
+asm32() {
+    if [ -z "$1" ]; then
+        echo "No file provided"
+        return 1
+    fi
+    filename="${1%.*}"
+    nasm -f elf "$1" -o "${filename}.o"
+    ld -m elf_i386 -o "$filename" "${filename}.o"
+}
+asm64() {
+    if [ -z "$1" ]; then
+        echo "No file provided"
+        return 1
+    fi
+
+    filename="${1%.*}"
+    nasm -f elf64 "$1" -o "${filename}.o"
+    ld -o "$filename" "${filename}.o"
+}
+
 # Mount usb
 mnt() {
     # Verify the user added the decive as an argument
