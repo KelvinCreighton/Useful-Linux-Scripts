@@ -25,6 +25,11 @@ fi
 unset rc
 
 
+# Release any chrome profiles locks on startup in the case that chrome incorrectly terminated during shutdown
+if [ -f "$HOME/.config/chromium/SingletonLock" ]; then
+    rm -f "$HOME/.config/chromium/SingletonLock"
+fi
+
 
 # cd + ls commands
 cdl() {
