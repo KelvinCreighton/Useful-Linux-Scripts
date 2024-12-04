@@ -28,3 +28,10 @@ nnoremap <S-x> :%!xxd -r<CR>
 nnoremap <C-s> :w<CR>
 inoremap <C-s> <C-o>:w<CR>
 vnoremap <C-s> <Esc>:w<CR>gv>
+
+" Map Ctrl+Z to undo
+set noesckeys   " Disable SIGTSTP
+nnoremap <C-z> u
+inoremap <C-z> <Esc>u
+vnoremap <C-z> u
+
