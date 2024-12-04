@@ -35,5 +35,5 @@ inoremap <C-z> <Esc>u
 vnoremap <C-z> u
 
 " Map Shift+Tab to reverse indent
-inoremap <S-Tab> <Esc>v<i
+inoremap <S-Tab> <Esc>v<a
 
