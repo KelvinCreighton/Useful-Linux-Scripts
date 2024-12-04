@@ -12,11 +12,19 @@ inoremap <C-Up> <C-O>5k
 noremap <C-Down> 5j
 inoremap <C-Down> <C-O>5j
 
-" Map Ctrl + Backspace to delete the previous word in insert mode
-inoremap <C-BS> <C-W>
+" Map Ctrl+Backspace to delete the previous word in insert mode
+noremap! <C-BS> <C-w>
+noremap! <C-h> <C-w>
 
+" Map Ctrl+Del to delete the next word in insert mode
+imap <C-Del> <Esc>ldeha
 
 " Convert to hex editor mode
 nnoremap <C-x> :%!xxd<CR>
 " Convert back from hex editor mode
 nnoremap <S-x> :%!xxd -r<CR>
+
+" Map Ctrl+S to the :w command to save the script
+nnoremap <C-s> :w<CR>
+inoremap <C-s> <C-o>:w<CR>
+vnoremap <C-s> <Esc>:w<CR>gv>
