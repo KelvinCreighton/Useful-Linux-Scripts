@@ -71,6 +71,8 @@ alias cls='clear'
 # Typo clear aliases
 alias claer='clear'
 alias clea='clear'
+# Quick clear
+alias c='clear'
 # top command set to gigabytes
 alias topg='top -E g'
 # Bluetooth restart alias
