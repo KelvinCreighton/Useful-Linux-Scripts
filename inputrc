@@ -1,0 +1,5 @@
+# Ctrl-Backspace: delete previous word
+"\C-H": shell-backward-kill-word
+
+# Ctrl-Delete: delete next word
+"\e[3;5~": shell-kill-word
