@@ -1,6 +1,6 @@
-# Custom bashrc & vimrc Commands
+# Custom rc Scripts
 
-Custom bashrc and vimrc commands to improve personal optimization and speed on my Fedora 40/41 KDE device.
+Custom rc scripts to improve personal optimization and speed on my Fedora 40/41 KDE device.
 
 Run commands:
   chmod +x quick_install.sh
