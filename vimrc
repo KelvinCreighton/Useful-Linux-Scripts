@@ -3,6 +3,8 @@ set smartindent       " Enable smart indentation
 set tabstop=4         " Set the width of a tab character
 set shiftwidth=4      " Set the number of spaces used for each step of (auto)indent
 set expandtab         " Convert tabs to spaces
+set hlsearch
+
 
 " Map Ctrl + Up Arrow to move up 5 lines
 noremap <C-Up> 5k
