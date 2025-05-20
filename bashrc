@@ -31,12 +31,12 @@ if [ -f "$HOME/.config/chromium/SingletonLock" ]; then
 fi
 
 
-# cd + ls commands
-cdl() {
-	cd "$1" || return
-	shift
-	ls "$@"
-}
+
+# cdh as original cd
+alias cdh='builtin cd'
+# cd now as cd + ls
+alias cd='cd && ls'
+
 # Shortcut to cdl if I change my mind from typing cd I can easily type home -> l -> enter
 alias lcd='cdl "$1"'
 # Make a directory and enter that new directory
