@@ -31,8 +31,7 @@ if [ -f "$HOME/.config/chromium/SingletonLock" ]; then
 fi
 
 
-# Shortcut to cdl if I change my mind from typing cd I can easily type home -> l -> enter
-alias lcd='cdl "$1"'
+
 # Make a directory and enter that new directory
 mkdircd() {
     mkdir -p "$1"
