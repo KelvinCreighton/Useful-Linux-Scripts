@@ -36,7 +36,7 @@ fi
 
 # Mount the partition to the target
 echo "Mounting partition..."
-sudo mount "$PARTITION" "$TARGET"
+mount "$PARTITION" "$TARGET"
 
 # Mount necessary filesystems
 echo "Mounting system directories into chroot..."
@@ -47,9 +47,16 @@ mount --bind /sys "$TARGET/sys"
 mount --bind /run "$TARGET/run"
 mount --bind /tmp "$TARGET/tmp"
 
+echo "Copying DNS resolver config..."
+mv "$TARGET/etc/resolv.conf" "$TARGET/etc/.tmp_resolv.conf"
+cp /etc/resolv.conf "$TARGET/etc/resolv.conf"
+
 # Enter the chroot
 echo "Entering chroot environment in $TARGET..."
 chroot "$TARGET" /bin/bash
+
+echo "Restoring DNS resolver config..."
+mv "$TARGET/etc/.tmp_resolv.conf" "$TARGET/etc/resolv.conf"
 
 # After exiting chroot, unmount everything
 echo "Cleaning up mounts..."
@@ -60,8 +67,8 @@ umount -l "$TARGET/sys"
 umount -l "$TARGET/run"
 umount -l "$TARGET/tmp"
 
-echo "Unmounting partition..."
-umount "$PARTITION"
+echo "Unmounting..."
+umount "$TARGET"
 
 # Clean up created files
 # Leave them if they already existed
