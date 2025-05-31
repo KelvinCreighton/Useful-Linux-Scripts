@@ -30,6 +30,17 @@ if [ -f "$HOME/.config/chromium/SingletonLock" ]; then
     rm -f "$HOME/.config/chromium/SingletonLock"
 fi
 
+# cd is cd+ls
+# cd -s is regular cd
+cd() {
+    if [ "$1" == "-s" ]; then
+        shift
+        builtin cd "$@"
+    else
+        builtin cd "$@"
+        ls
+    fi
+}
 
 
 # Make a directory and enter that new directory
