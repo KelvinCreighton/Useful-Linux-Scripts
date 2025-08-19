@@ -87,6 +87,10 @@ unziprm() {
     rm "$1"
 }
 
+# Quick shred + rm
+alias sm='shred -u'
+
+
 # Quick compile asm
 asm32() {
     if [ -z "$1" ]; then
