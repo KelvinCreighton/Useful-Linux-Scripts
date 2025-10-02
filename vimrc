@@ -21,9 +21,9 @@ noremap! <C-h> <C-w>
 " Map Ctrl+Del to delete the next word in insert mode
 imap <C-Del> <Esc>ldeha
 
-" Convert to hex editor mode
+" Switch to hex editor mode
 nnoremap <C-x> :%!xxd<CR>
-" Convert back from hex editor mode
+" Switch out of hex editor mode
 nnoremap <S-x> :%!xxd -r<CR>
 
 " Map Ctrl+S to the :w command to save the script
@@ -39,3 +39,21 @@ vnoremap <C-z> u
 " Map Shift+Tab to reverse indent
 inoremap <S-Tab> <Esc>v<a
 
+" Map Alt+Up: move cursor up and scroll page up one line
+nnoremap <A-Up> k<C-Y>
+inoremap <A-Up>   <Esc>k<C-Y>i
+
+" Map Alt+Down: move cursor down and scroll page down one line
+nnoremap <A-Down> j<C-E>
+inoremap <A-Down> <Esc>j<C-E>i
+
+" Map Alt+Ctrl+Up Arrow to move up 5 lines and scroll page 5 lines up
+nnoremap <C-A-Up>   5k5<C-Y>
+inoremap <C-A-Up>   <Esc>5k5<C-Y>i
+
+" Map Alt+Ctrl+Down Arrow to move down 5 lines and scroll page down lines up
+nnoremap <C-A-Down> 5j5<C-E>
+inoremap <C-A-Down> <Esc>5j5<C-E>i
+
+" Move cursor to mouse click
+set mouse=a
