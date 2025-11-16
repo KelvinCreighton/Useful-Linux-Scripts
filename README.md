@@ -1,6 +1,6 @@
 # Custom rc Scripts
 
-Custom rc scripts to improve personal optimization and speed on my Fedora 40/41 KDE device.
+Custom rc scripts to improve personal optimization and speed on my Fedora 43 KDE Wayland Linux machine.
 
 Run commands:
   chmod +x quick_install.sh
