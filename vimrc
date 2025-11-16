@@ -56,4 +56,4 @@ nnoremap <C-A-Down> 5j5<C-E>
 inoremap <C-A-Down> <Esc>5j5<C-E>i
 
 " Move cursor to mouse click
-set mouse=a
+set mouse=ni
