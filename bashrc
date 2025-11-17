@@ -87,8 +87,32 @@ unziprm() {
     rm "$1"
 }
 
-# Quick shred + rm
-alias sm='shred -u'
+# Recursive shred
+smr() {
+    if [ -z "$1" ]; then
+        echo "usage: smr <directory>"
+        return 1
+    fi
+
+    if [ ! -d "$1" ]; then
+        echo "not a directory: $1"
+        return 1
+    fi
+
+    printf "Shred and remove '%s'? [y/N]: " "$1"
+    read -r ans
+    case "$ans" in
+        [yY][eE][sS]|[yY]) ;;
+        *) echo "aborted"; return 1 ;;
+    esac
+
+    if ! find "$1" -type f -exec shred -u {} +; then
+        echo "shred failed; directory not removed"
+        return 1
+    fi
+
+    rm -r "$1"
+}
 
 
 # Quick compile asm
