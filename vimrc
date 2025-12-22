@@ -5,6 +5,8 @@ set shiftwidth=4      " Set the number of spaces used for each step of (auto)ind
 set expandtab         " Convert tabs to spaces
 set hlsearch
 
+cnoreabbrev W w
+cnoreabbrev Q q
 
 " Map Ctrl + Up Arrow to move up 5 lines
 noremap <C-Up> 5k
